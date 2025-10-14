@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # 前端代码检查
+  frontend-lint:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run ESLint
+        run: pnpm run lint || true
+
+  # Rust 代码检查
+  rust-check:
+    name: Rust Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+          override: true
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: src-tauri/target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run cargo fmt
+        run: cd src-tauri && cargo fmt -- --check
+
+      - name: Run cargo clippy
+        run: cd src-tauri && cargo clippy -- -D warnings
+
+  # 构建测试
+  build:
+    name: Build - ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            os: windows-latest
+          - platform: macos
+            os: macos-latest
+          - platform: linux
+            os: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Install dependencies (Ubuntu)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        run: pnpm install
+
+      - name: Build application
+        run: pnpm tauri build
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+
+      - name: Upload artifacts (Windows)
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v3
+        with:
+          name: oria-windows
+          path: src-tauri/target/release/bundle/msi/*.msi
+
+      - name: Upload artifacts (macOS)
+        if: matrix.platform == 'macos'
+        uses: actions/upload-artifact@v3
+        with:
+          name: oria-macos
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+
+      - name: Upload artifacts (Linux)
+        if: matrix.platform == 'linux'
+        uses: actions/upload-artifact@v3
+        with:
+          name: oria-linux
+          path: |
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/appimage/*.AppImage

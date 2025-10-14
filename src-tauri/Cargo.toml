@@ -1,0 +1,48 @@
+[package]
+authors = ["you"]
+description = "A Tauri App"
+edition = "2021"
+name = "auto-label"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+crate-type = ["staticlib", "cdylib", "rlib"]
+name = "auto_label_lib"
+
+[build-dependencies]
+tauri-build = {version = "2", features = [] }
+
+[features]
+default = []
+onnx = ["ort", "ndarray", "half", "regex", "rand"]
+
+[dependencies]
+anyhow = "1.0"
+base64 = "0.22"
+chrono = {version = "0.4", features = ["serde"] }
+image = "0.24"
+lazy_static = "1.4"
+natord = "1.0"
+rayon = "1.10"
+rfd = "0.14"
+serde = {version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = {version = "2", features = [] }
+tauri-plugin-opener = "2"
+tokio = {version = "1", features = ["full"] }
+
+# ONNX推理相关依赖
+half = {version = "2.3.1", optional = true}
+ndarray = {version = "0.15", optional = true}
+ort = {version = "1.16", default-features = false, features = ["load-dynamic", "copy-dylibs", "half"], optional = true}
+rand = {version = "0.8.5", optional = true}
+regex = {version = "1.5.4", optional = true}
+
+# HTTP客户端 (用于API调用)
+reqwest = {version = "0.12", features = ["json", "multipart"] }
+uuid = {version = "1.6", features = ["v4", "serde"] }

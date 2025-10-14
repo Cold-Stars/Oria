@@ -1,0 +1,35 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Oria",
+  "version": "0.1.0",
+  "identifier": "com.coldstars.Oria",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Oria",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/oria_icon32.png",
+      "icons/oria_icon128.png",
+      "icons/oria_icon256.png",
+      "icons/icon.icns",
+      "icons/oria_icon16.ico"
+    ]
+  }
+}

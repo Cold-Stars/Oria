@@ -1,0 +1,154 @@
+/* 全局样式重置 */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+  color: #333333;
+  color-scheme: light;
+}
+
+#app {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 工具提示样式 */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s;
+  z-index: 1000;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 加载动画 */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 拖拽样式 */
+.dragging {
+  cursor: move !important;
+}
+
+.drag-over {
+  background-color: #e3f2fd;
+  border: 2px dashed #1976d2;
+}
+
+/* 选择禁用 */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 错误状态 */
+.error-state {
+  color: #f44336;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* 成功状态 */
+.success-state {
+  color: #4caf50;
+  background-color: #e8f5e8;
+  border: 1px solid #c8e6c9;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* 键盘快捷键提示 */
+.keyboard-hint {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.keyboard-hint.show {
+  opacity: 1;
+}
+
+/* 调整消息提示的位置 */
+.n-message-container {
+  top: 120px !important;
+}
