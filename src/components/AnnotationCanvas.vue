@@ -140,11 +140,9 @@ const draw = () => {
     // Canvas 会自动将预览图拉伸到目标尺寸
     ctx.value.drawImage(imageElement.value, 0, 0, imgWidth, imgHeight);
 
-    // 绘制标注（根据 showAnnotations 状态）
-    // 标注坐标基于原始图片尺寸，与图片绘制尺寸一致
-    if (props.showAnnotations) {
-      drawAnnotations();
-    }
+    // 绘制标注
+    // 全局显示/隐藏和单个标注的visible是独立的两个控制维度
+    drawAnnotations();
 
     // 绘制当前正在绘制的标注（总是显示）
     if (isDrawing.value && currentAnnotation.value) {
@@ -160,7 +158,8 @@ const hoveredAnnotation = ref(null);
 
 const drawAnnotations = () => {
   props.annotations.forEach((annotation) => {
-    // 跳过隐藏的标注
+    // 只检查单个标注的 visible 属性
+    // 全局显示/隐藏按钮会直接修改所有标注的 visible 属性
     if (annotation.visible === false) return;
 
     const isSelected = props.selectedAnnotation?.id === annotation.id;
@@ -1256,7 +1255,6 @@ const onCanvasClick = (event) => {
 watch(() => props.image, loadImage, { immediate: true });
 watch(() => props.annotations, draw, { deep: true });
 watch(() => props.selectedAnnotation, draw);
-watch(() => props.showAnnotations, draw); // 监听显示/隐藏状态
 
 // 键盘事件处理
 const onKeyDown = (event) => {

@@ -132,7 +132,16 @@ const switchTool = (tool) => {
 
 // 切换标注显示/隐藏
 const toggleAnnotations = () => {
-  showAnnotations.value = !showAnnotations.value;
+  const newState = !showAnnotations.value;
+  showAnnotations.value = newState;
+  
+  // 同时修改所有标注的 visible 属性
+  annotations.value.forEach((annotation) => {
+    annotation.visible = newState;
+  });
+  
+  // 触发自动保存
+  autoSave();
 };
 
 // 导出/导入功能
