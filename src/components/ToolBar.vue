@@ -81,6 +81,30 @@ const formattedSaveTime = computed(() => {
   });
 });
 
+// 导入导出下拉菜单选项
+const exportOptions = [
+  {
+    label: "📦 导出COCO",
+    key: "export-coco",
+  },
+  {
+    label: "📄 导出YOLO",
+    key: "export-yolo",
+  },
+  {
+    type: "divider",
+    key: "d1",
+  },
+  {
+    label: "📥 导入COCO",
+    key: "import-coco",
+  },
+];
+
+const handleExportSelect = (key) => {
+  emit(key);
+};
+
 const switchTool = (tool) => {
   emit("switch-tool", tool);
 };
@@ -128,47 +152,17 @@ const inferenceAll = () => {
 
 <template>
   <div class="toolbar">
-    <div class="toolbar-section">
-      <n-button type="primary" @click="openFolder" size="small"> 打开文件夹 </n-button>
-
-      <n-button type="success" @click="save" size="small" :disabled="saveStatus === 'saving'">
-        {{ saveStatus === "saving" ? "保存中..." : "保存" }}
+    <!-- 主要操作区 -->
+    <div class="toolbar-section primary-actions">
+      <n-button type="primary" @click="openFolder" size="small" class="btn-responsive">
+        <span class="btn-icon">📁</span>
+        <span class="btn-text">打开文件夹</span>
       </n-button>
 
-      <n-divider vertical />
-
-      <n-button @click="exportCoco" size="small" secondary> 📦 导出COCO </n-button>
-
-      <n-button @click="exportYolo" size="small" secondary> 📄 导出YOLO </n-button>
-
-      <n-button @click="importCoco" size="small" secondary> 📥 导入COCO </n-button>
-
-      <n-divider vertical />
-
-      <n-button @click="showInferenceSettings" size="small" secondary> ⚙️ 推理设置 </n-button>
-
-      <n-divider vertical />
-
-      <n-space :size="8">
-        <n-button
-          type="info"
-          @click="inferenceOne"
-          :disabled="!hasImage || !inferenceConfigured"
-          size="small"
-          style="min-width: 88px"
-        >
-          🚀 当前图
-        </n-button>
-        <n-button
-          type="info"
-          @click="inferenceAll"
-          :disabled="!hasImage || !inferenceConfigured"
-          size="small"
-          style="min-width: 130px"
-        >
-          🎯 推理当前及之后
-        </n-button>
-      </n-space>
+      <n-button type="success" @click="save" size="small" :disabled="saveStatus === 'saving'" class="btn-responsive">
+        <span class="btn-icon">💾</span>
+        <span class="btn-text">{{ saveStatus === "saving" ? "保存中..." : "保存" }}</span>
+      </n-button>
 
       <!-- 保存状态指示器 -->
       <div class="save-status" :style="{ color: saveStatusInfo.color }">
@@ -180,6 +174,52 @@ const inferenceAll = () => {
       </div>
     </div>
 
+    <n-divider vertical class="divider-responsive" />
+
+    <!-- 导入导出区 -->
+    <div class="toolbar-section export-actions">
+      <n-dropdown trigger="hover" :options="exportOptions" @select="handleExportSelect">
+        <n-button size="small" secondary class="btn-responsive">
+          <span class="btn-icon">📦</span>
+          <span class="btn-text">导入/导出</span>
+        </n-button>
+      </n-dropdown>
+    </div>
+
+    <n-divider vertical class="divider-responsive" />
+
+    <!-- 推理区 -->
+    <div class="toolbar-section inference-actions">
+      <n-button @click="showInferenceSettings" size="small" secondary class="btn-responsive">
+        <span class="btn-icon">⚙️</span>
+        <span class="btn-text">推理设置</span>
+      </n-button>
+
+      <n-button
+        type="info"
+        @click="inferenceOne"
+        :disabled="!hasImage || !inferenceConfigured"
+        size="small"
+        class="btn-responsive"
+      >
+        <span class="btn-icon">🚀</span>
+        <span class="btn-text">当前图</span>
+      </n-button>
+      <n-button
+        type="info"
+        @click="inferenceAll"
+        :disabled="!hasImage || !inferenceConfigured"
+        size="small"
+        class="btn-responsive btn-inference-all"
+      >
+        <span class="btn-icon">🎯</span>
+        <span class="btn-text">推理当前及之后</span>
+      </n-button>
+    </div>
+
+    <n-divider vertical class="divider-responsive" />
+
+    <!-- 工具区 -->
     <div class="toolbar-section tools">
       <div class="tool-group">
         <n-button
@@ -197,18 +237,21 @@ const inferenceAll = () => {
       </div>
     </div>
 
-    <div class="toolbar-section">
+    <n-divider vertical class="divider-responsive" />
+
+    <!-- 右侧操作区 -->
+    <div class="toolbar-section right-actions">
       <n-button
         :type="showAnnotations ? 'primary' : 'default'"
         size="small"
         @click="toggleAnnotations"
-        class="tooltip"
-        :data-tooltip="showAnnotations ? '隐藏标注' : '显示标注'"
+        class="btn-responsive"
       >
-        {{ showAnnotations ? "👁️ 显示标注" : "🚫 隐藏标注" }}
+        <span class="btn-icon">{{ showAnnotations ? "👁️" : "🚫" }}</span>
+        <span class="btn-text">{{ showAnnotations ? "显示标注" : "隐藏标注" }}</span>
       </n-button>
 
-      <n-button text size="small" @click="showHelp" class="tooltip" data-tooltip="快捷键帮助 (F1)">
+      <n-button text size="small" @click="showHelp" class="btn-help">
         ❓
       </n-button>
     </div>
@@ -217,21 +260,45 @@ const inferenceAll = () => {
 
 <style scoped>
 .toolbar {
-  height: 50px;
+  min-height: 50px;
   background-color: #ffffff !important;
   border-bottom: 1px solid #e0e0e0 !important;
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 24px;
+  padding: 8px 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+  overflow-x: auto;
 }
 
 .toolbar-section {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
+/* 响应式按钮 */
+.btn-responsive {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.btn-icon {
+  flex-shrink: 0;
+}
+
+.btn-text {
+  flex-shrink: 0;
+}
+
+.btn-help {
+  min-width: 32px;
+}
+
+/* 保存状态 */
 .save-status {
   display: flex;
   align-items: center;
@@ -241,6 +308,7 @@ const inferenceAll = () => {
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
 .save-icon {
@@ -267,9 +335,9 @@ const inferenceAll = () => {
   }
 }
 
+/* 工具区 */
 .tools {
-  flex: 1;
-  justify-content: center;
+  flex: 0 1 auto;
 }
 
 .tool-group {
@@ -286,22 +354,101 @@ const inferenceAll = () => {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-width: 70px;
+  min-width: 60px;
   height: auto;
-  padding: 8px 12px;
+  padding: 6px 8px;
   white-space: nowrap;
 }
 
 .tool-icon {
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.2;
   display: block;
 }
 
 .tool-label {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.2;
   display: block;
   white-space: nowrap;
+}
+
+/* 响应式设计 - 小屏幕 */
+@media (max-width: 1200px) {
+  .toolbar {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .toolbar-section {
+    gap: 4px;
+  }
+
+  .btn-inference-all .btn-text {
+    display: none;
+  }
+
+  .btn-inference-all .btn-icon::after {
+    content: "推理";
+    font-size: 12px;
+    margin-left: 4px;
+  }
+
+  .save-time {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .divider-responsive {
+    display: none;
+  }
+
+  .btn-text {
+    display: none;
+  }
+
+  .btn-responsive {
+    min-width: 32px;
+    justify-content: center;
+  }
+
+  .save-text {
+    display: none;
+  }
+
+  .tool-btn {
+    min-width: 50px;
+    padding: 4px 6px;
+  }
+
+  .tool-icon {
+    font-size: 16px;
+  }
+
+  .tool-label {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .toolbar {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .export-actions,
+  .inference-actions {
+    order: 10;
+  }
+
+  .tool-label {
+    display: none;
+  }
+
+  .tool-btn {
+    min-width: 40px;
+    padding: 4px;
+  }
 }
 </style>

@@ -170,35 +170,43 @@ watch(inferenceMode, () => {
             </n-form-item>
 
             <n-form-item label="置信度阈值">
-              <n-slider
-                v-model:value="apiConfig.confThreshold"
-                :step="0.05"
-                :min="0.1"
-                :max="0.9"
-              />
-              <n-input-number
-                v-model:value="apiConfig.confThreshold"
-                :step="0.05"
-                :min="0.1"
-                :max="0.9"
-                style="margin-left: 12px; width: 130px"
-              />
+              <div style="display: flex; align-items: center; gap: 12px; width: 100%">
+                <n-slider
+                  v-model:value="apiConfig.confThreshold"
+                  :step="0.05"
+                  :min="0.1"
+                  :max="0.9"
+                  style="flex: 1; min-width: 0"
+                />
+                <n-input-number
+                  v-model:value="apiConfig.confThreshold"
+                  :step="0.05"
+                  :min="0.1"
+                  :max="0.9"
+                  :show-button="false"
+                  style="width: 120px; flex-shrink: 0"
+                />
+              </div>
             </n-form-item>
 
             <n-form-item label="IOU阈值">
-              <n-slider
-                v-model:value="apiConfig.iouThreshold"
-                :step="0.05"
-                :min="0.1"
-                :max="0.9"
-              />
-              <n-input-number
-                v-model:value="apiConfig.iouThreshold"
-                :step="0.05"
-                :min="0.1"
-                :max="0.9"
-                style="margin-left: 12px; width: 130px"
-              />
+              <div style="display: flex; align-items: center; gap: 12px; width: 100%">
+                <n-slider
+                  v-model:value="apiConfig.iouThreshold"
+                  :step="0.05"
+                  :min="0.1"
+                  :max="0.9"
+                  style="flex: 1; min-width: 0"
+                />
+                <n-input-number
+                  v-model:value="apiConfig.iouThreshold"
+                  :step="0.05"
+                  :min="0.1"
+                  :max="0.9"
+                  :show-button="false"
+                  style="width: 120px; flex-shrink: 0"
+                />
+              </div>
             </n-form-item>
           </n-space>
         </div>
@@ -250,35 +258,43 @@ watch(inferenceMode, () => {
             </div>
 
             <n-form-item label="置信度阈值">
-              <n-slider
-                v-model:value="onnxConfig.confThreshold"
-                :step="0.05"
-                :min="0.1"
-                :max="0.9"
-              />
-              <n-input-number
-                v-model:value="onnxConfig.confThreshold"
-                :step="0.05"
-                :min="0.1"
-                :max="0.9"
-                style="margin-left: 12px; width: 100px"
-              />
+              <div style="display: flex; align-items: center; gap: 12px; width: 100%">
+                <n-slider
+                  v-model:value="onnxConfig.confThreshold"
+                  :step="0.05"
+                  :min="0.1"
+                  :max="0.9"
+                  style="flex: 1; min-width: 0"
+                />
+                <n-input-number
+                  v-model:value="onnxConfig.confThreshold"
+                  :step="0.05"
+                  :min="0.1"
+                  :max="0.9"
+                  :show-button="false"
+                  style="width: 120px; flex-shrink: 0"
+                />
+              </div>
             </n-form-item>
 
             <n-form-item label="IOU阈值">
-              <n-slider
-                v-model:value="onnxConfig.iouThreshold"
-                :step="0.05"
-                :min="0.1"
-                :max="0.9"
-              />
-              <n-input-number
-                v-model:value="onnxConfig.iouThreshold"
-                :step="0.05"
-                :min="0.1"
-                :max="0.9"
-                style="margin-left: 12px; width: 100px"
-              />
+              <div style="display: flex; align-items: center; gap: 12px; width: 100%">
+                <n-slider
+                  v-model:value="onnxConfig.iouThreshold"
+                  :step="0.05"
+                  :min="0.1"
+                  :max="0.9"
+                  style="flex: 1; min-width: 0"
+                />
+                <n-input-number
+                  v-model:value="onnxConfig.iouThreshold"
+                  :step="0.05"
+                  :min="0.1"
+                  :max="0.9"
+                  :show-button="false"
+                  style="width: 120px; flex-shrink: 0"
+                />
+              </div>
             </n-form-item>
 
             <n-form-item label="使用GPU加速">
