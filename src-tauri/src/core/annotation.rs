@@ -25,10 +25,17 @@ pub async fn save_annotations(
     let img = image::load_from_memory(&image_bytes)?;
     let (width, height) = img.dimensions();
 
+    // 只保存文件名，不保存完整路径
+    let file_name = image_path_obj
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(&image_path)
+        .to_string();
+
     let now = chrono::Utc::now().to_rfc3339();
     let annotation_file = AnnotationFile {
         version: "1.0".to_string(),
-        image_path: image_path.clone(),
+        image_path: file_name,
         image_width: width,
         image_height: height,
         annotations,
@@ -112,10 +119,17 @@ pub fn save_annotations_internal(
         (0, 0)
     };
 
+    // 只保存文件名，不保存完整路径
+    let file_name = image_path_obj
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or(image_path)
+        .to_string();
+
     let now = chrono::Utc::now().to_rfc3339();
     let annotation_file = AnnotationFile {
         version: "1.0".to_string(),
-        image_path: image_path.to_string(),
+        image_path: file_name,
         image_width: width,
         image_height: height,
         annotations,

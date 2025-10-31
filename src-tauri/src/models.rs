@@ -22,9 +22,10 @@ pub struct AnnotationData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rotation: Option<f64>, // 旋转角度，仅旋转矩形使用
     pub label: String,
-    pub created: String, // ISO时间戳
-    #[serde(default = "default_visible")]
-    pub visible: bool, // 是否可见，默认为 true
+    #[serde(skip_serializing, default)]
+    pub created: String, // ISO时间戳（不保存到JSON）
+    #[serde(skip_serializing, default = "default_visible")]
+    pub visible: bool, // 是否可见（不保存到JSON）
 }
 
 /// 默认可见
