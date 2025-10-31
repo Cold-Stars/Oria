@@ -179,31 +179,32 @@ const drawAnnotation = (annotation, isDrawing = false, isSelected = false, isHov
       ? props.categoryColors[annotation.label]
       : "#00aaff"; // 默认蓝色
 
-  // 设置样式
-  if (isSelected) {
-    ctx.value.strokeStyle = "#ff4444"; // 选中时使用红色
-    ctx.value.lineWidth = 3;
-  } else if (isHovered) {
-    ctx.value.strokeStyle = "#ff8800"; // 橙色表示悬停
-    ctx.value.lineWidth = 2;
-  } else if (isDrawing) {
+  // 设置样式，始终使用类别颜色，通过线宽区分状态
+  if (isDrawing) {
     ctx.value.strokeStyle = "#44ff44"; // 绘制中使用绿色
     ctx.value.lineWidth = 2;
   } else {
-    ctx.value.strokeStyle = categoryColor; // 使用类别颜色
-    ctx.value.lineWidth = 2;
+    ctx.value.strokeStyle = categoryColor; // 始终使用类别颜色
+    if (isSelected) {
+      ctx.value.lineWidth = 3; // 选中时加粗
+    } else if (isHovered) {
+      ctx.value.lineWidth = 2.5; // 悬停时稍粗
+    } else {
+      ctx.value.lineWidth = 2; // 普通状态
+    }
   }
 
-  // 填充色也使用类别颜色（半透明）
-  // 将 hsl(h, s%, l%) 转换为 hsla(h, s%, l%, 0.1)
+  // 填充色使用类别颜色，选中时透明度稍高
+  let fillAlpha = isSelected ? 0.15 : (isHovered ? 0.12 : 0.1);
   let fillColor;
   if (categoryColor.startsWith("hsl(")) {
-    fillColor = categoryColor.replace("hsl(", "hsla(").replace(")", ", 0.1)");
+    fillColor = categoryColor.replace("hsl(", "hsla(").replace(")", `, ${fillAlpha})`);
   } else if (categoryColor.startsWith("#")) {
     // 如果是hex颜色，添加透明度
-    fillColor = categoryColor + "20";
+    const alpha = Math.round(fillAlpha * 255).toString(16).padStart(2, '0');
+    fillColor = categoryColor + alpha;
   } else {
-    fillColor = "rgba(0, 170, 255, 0.1)";
+    fillColor = `rgba(0, 170, 255, ${fillAlpha})`;
   }
   ctx.value.fillStyle = fillColor;
 
@@ -216,7 +217,7 @@ const drawAnnotation = (annotation, isDrawing = false, isSelected = false, isHov
 
     // 绘制控制点（选中或悬停时显示）
     if (isSelected || isHovered) {
-      drawControlPoints(annotation, isSelected);
+      drawControlPoints(annotation, isSelected, categoryColor);
     }
 
     // 绘制标签（普通矩形）
@@ -227,8 +228,8 @@ const drawAnnotation = (annotation, isDrawing = false, isSelected = false, isHov
       const textHeight = 16;
       const padding = 4;
 
-      // 背景矩形
-      ctx.value.fillStyle = isSelected ? "#ff4444" : categoryColor;
+      // 背景矩形，始终使用类别颜色
+      ctx.value.fillStyle = categoryColor;
       ctx.value.fillRect(
         annotation.x,
         annotation.y - textHeight - padding,
@@ -256,7 +257,7 @@ const drawAnnotation = (annotation, isDrawing = false, isSelected = false, isHov
 
     // 绘制旋转控制点（选中或悬停时显示）
     if (isSelected || isHovered) {
-      drawRotatedControlPoints(annotation, isSelected);
+      drawRotatedControlPoints(annotation, isSelected, categoryColor);
     }
 
     // 绘制标签（旋转矩形，在变换后的坐标系中）
@@ -268,7 +269,8 @@ const drawAnnotation = (annotation, isDrawing = false, isSelected = false, isHov
       const padding = 4;
 
       // 背景矩形（在局部坐标系中，矩形左上角是 (0, 0)）
-      ctx.value.fillStyle = isSelected ? "#ff4444" : categoryColor;
+      // 始终使用类别颜色
+      ctx.value.fillStyle = categoryColor;
       ctx.value.fillRect(0, -textHeight - padding, textWidth + padding * 2, textHeight + padding);
 
       // 标签文字（白色）
@@ -280,7 +282,7 @@ const drawAnnotation = (annotation, isDrawing = false, isSelected = false, isHov
   ctx.value.restore();
 };
 
-const drawControlPoints = (annotation, isSelected = true) => {
+const drawControlPoints = (annotation, isSelected = true, categoryColor = "#00aaff") => {
   if (!ctx.value) return;
 
   // 根据选中状态调整透明度
@@ -340,19 +342,27 @@ const drawControlPoints = (annotation, isSelected = true) => {
   // 设置透明度
   ctx.value.globalAlpha = opacity;
 
-  // 绘制角点 (较大，用于调整大小)
-  ctx.value.fillStyle = "#ff4444";
+  // 绘制角点 (用于调整大小)，使用类别颜色
+  ctx.value.fillStyle = categoryColor;
   cornerPoints.forEach((point) => {
     ctx.value.beginPath();
-    ctx.value.arc(point.x, point.y, 10, 0, Math.PI * 2);
+    ctx.value.arc(point.x, point.y, 7, 0, Math.PI * 2); // 从10px改为7px
     ctx.value.fill();
   });
 
-  // 绘制边中点 (较小，用于单方向调整)
-  ctx.value.fillStyle = "#ff6666";
+  // 绘制边中点 (用于单方向调整)，使用稍淡的类别颜色
+  // 将 hsl 颜色的亮度提高一些，使边点与角点有所区分
+  let edgeColor = categoryColor;
+  if (categoryColor.startsWith('hsl(')) {
+    edgeColor = categoryColor.replace(/\d+%\)$/, (match) => {
+      const lightness = parseInt(match);
+      return `${Math.min(lightness + 10, 70)}%)`;
+    });
+  }
+  ctx.value.fillStyle = edgeColor;
   edgePoints.forEach((point) => {
     ctx.value.beginPath();
-    ctx.value.arc(point.x, point.y, 6, 0, Math.PI * 2);
+    ctx.value.arc(point.x, point.y, 5, 0, Math.PI * 2); // 从6px改为5px
     ctx.value.fill();
   });
 
@@ -360,7 +370,7 @@ const drawControlPoints = (annotation, isSelected = true) => {
   ctx.value.globalAlpha = 1.0;
 };
 
-const drawRotatedControlPoints = (annotation, isSelected = true) => {
+const drawRotatedControlPoints = (annotation, isSelected = true, categoryColor = "#00aaff") => {
   // 旋转矩形的控制点绘制
   if (!ctx.value) return;
 
@@ -394,31 +404,38 @@ const drawRotatedControlPoints = (annotation, isSelected = true) => {
     { x: 0, y: annotation.height / 2, type: "edge", handle: "w" },
   ];
 
-  // 绘制角点
-  ctx.value.fillStyle = "#ff4444";
+  // 绘制角点，使用类别颜色
+  ctx.value.fillStyle = categoryColor;
   cornerPoints.forEach((point) => {
     ctx.value.beginPath();
-    ctx.value.arc(point.x, point.y, 10, 0, Math.PI * 2);
+    ctx.value.arc(point.x, point.y, 7, 0, Math.PI * 2); // 从10px改为7px
     ctx.value.fill();
   });
 
-  // 绘制边中点
-  ctx.value.fillStyle = "#ff6666";
+  // 绘制边中点，使用稍淡的类别颜色
+  let edgeColor = categoryColor;
+  if (categoryColor.startsWith('hsl(')) {
+    edgeColor = categoryColor.replace(/\d+%\)$/, (match) => {
+      const lightness = parseInt(match);
+      return `${Math.min(lightness + 10, 70)}%)`;
+    });
+  }
+  ctx.value.fillStyle = edgeColor;
   edgePoints.forEach((point) => {
     ctx.value.beginPath();
-    ctx.value.arc(point.x, point.y, 6, 0, Math.PI * 2);
+    ctx.value.arc(point.x, point.y, 5, 0, Math.PI * 2); // 从6px改为5px
     ctx.value.fill();
   });
 
-  // 旋转控制点 (在顶部中心上方，局部坐标系)
-  ctx.value.fillStyle = "#00ff00";
+  // 旋转控制点 (在顶部中心上方，局部坐标系)，使用类别颜色
+  ctx.value.fillStyle = categoryColor;
   ctx.value.beginPath();
-  ctx.value.arc(annotation.width / 2, -25, 10, 0, Math.PI * 2);
+  ctx.value.arc(annotation.width / 2, -25, 7, 0, Math.PI * 2); // 从10px改为7px
   ctx.value.fill();
 
-  // 旋转控制点连接线
-  ctx.value.strokeStyle = "#00ff00";
-  ctx.value.lineWidth = 3;
+  // 旋转控制点连接线，使用类别颜色
+  ctx.value.strokeStyle = categoryColor;
+  ctx.value.lineWidth = 2; // 从3px改为2px
   ctx.value.beginPath();
   ctx.value.moveTo(annotation.width / 2, 0);
   ctx.value.lineTo(annotation.width / 2, -25);

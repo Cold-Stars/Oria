@@ -58,20 +58,55 @@ const labelCategories = ref([]); // 所有出现过的标签类别
 const categoryColors = ref({}); // 类别对应的颜色映射
 const lastUsedLabel = ref(""); // 最近使用的标签
 
-// 生成类别颜色的函数（基于字符串哈希）
+// 预定义的高对比度颜色池
+const predefinedColors = [
+  'hsl(0, 85%, 55%)',     // 红色
+  'hsl(210, 85%, 55%)',   // 蓝色
+  'hsl(120, 85%, 45%)',   // 绿色
+  'hsl(45, 90%, 55%)',    // 橙黄色
+  'hsl(280, 85%, 60%)',   // 紫色
+  'hsl(180, 85%, 45%)',   // 青色
+  'hsl(330, 85%, 55%)',   // 品红色
+  'hsl(90, 85%, 45%)',    // 黄绿色
+  'hsl(25, 90%, 55%)',    // 橙色
+  'hsl(260, 85%, 60%)',   // 靛蓝色
+  'hsl(150, 85%, 45%)',   // 青绿色
+  'hsl(300, 85%, 60%)',   // 洋红色
+  'hsl(60, 90%, 50%)',    // 黄色
+  'hsl(195, 85%, 50%)',   // 天蓝色
+  'hsl(15, 90%, 55%)',    // 朱红色
+  'hsl(270, 85%, 60%)',   // 紫罗兰色
+  'hsl(165, 85%, 45%)',   // 青绿色
+  'hsl(315, 85%, 60%)',   // 粉红色
+  'hsl(135, 85%, 45%)',   // 翠绿色
+  'hsl(240, 85%, 60%)',   // 蓝紫色
+];
+
+// 已使用的颜色索引
+let colorIndex = 0;
+
+// 生成类别颜色的函数（优化版）
 const generateCategoryColor = (category) => {
-  // 使用类别名称生成稳定的哈希值
-  let hash = 0;
-  for (let i = 0; i < category.length; i++) {
-    hash = category.charCodeAt(i) + ((hash << 5) - hash);
-    hash = hash & hash; // 转换为32位整数
+  // 计算当前类别的索引（基于已有类别数量）
+  const categoryIndex = labelCategories.value.indexOf(category);
+  const actualIndex = categoryIndex >= 0 ? categoryIndex : labelCategories.value.length;
+  
+  // 如果在预定义颜色范围内，直接使用
+  if (actualIndex < predefinedColors.length) {
+    return predefinedColors[actualIndex];
   }
-
-  // 使用哈希值生成色相（0-360度）
-  const hue = Math.abs(hash % 360);
-
-  // 使用HSL色彩空间生成颜色
-  return `hsl(${hue}, 70%, 50%)`; // 饱和度70%，亮度50%
+  
+  // 超出预定义颜色后，使用黄金角度分布生成颜色
+  // 黄金角度约为137.5度，能确保颜色在色相环上均匀分布且差异最大
+  const goldenAngle = 137.508;
+  const hue = (actualIndex * goldenAngle) % 360;
+  
+  // 使用较高的饱和度和适中的亮度，确保颜色鲜艳且易区分
+  // 通过索引调整亮度，避免颜色过于相似
+  const saturation = 80 + (actualIndex % 3) * 5; // 80-90%
+  const lightness = 45 + (actualIndex % 4) * 3;  // 45-54%
+  
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 };
 
 // 从标注中提取所有类别
