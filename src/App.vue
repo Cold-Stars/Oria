@@ -11,6 +11,7 @@ import InferenceSettings from "./components/InferenceSettings.vue";
 // import SimpleCanvas from "./components/SimpleCanvas.vue"; // 测试完成，已移除
 import { createKeyboardManager } from "./utils/keyboard.js";
 import { isImageFile, validateAnnotation } from "./utils/annotation.js";
+import { createHistoryManager } from "./utils/history.js";
 
 // 创建独立的 Naive UI API（不需要 provider）
 const configProviderPropsRef = ref({
@@ -43,6 +44,9 @@ const showKeyboardHelp = ref(false);
 const showAnnotations = ref(true); // 是否显示标注框
 const showInferenceSettings = ref(false); // 是否显示推理设置对话框
 const inferenceConfig = ref(null); // 推理配置
+const canvasRef = ref(null); // AnnotationCanvas组件引用
+const historyManager = ref(null); // 历史记录管理器
+const isRestoringHistory = ref(false); // 是否正在恢复历史记录（避免重复记录）
 
 // 保存状态
 const saveStatus = ref("saved"); // saved, saving, unsaved, error
@@ -825,6 +829,15 @@ const loadImage = async (index) => {
       // 加载对应的标注数据
       await loadAnnotations();
 
+      // 初始化历史记录（清空并保存初始状态）
+      if (historyManager.value) {
+        historyManager.value.clear();
+        historyManager.value.push({
+          annotations: annotations.value,
+          selectedAnnotation: selectedAnnotation.value,
+        });
+      }
+
       // 重置保存状态
       saveStatus.value = "saved";
       hasUnsavedChanges.value = false;
@@ -895,6 +908,22 @@ const saveAnnotations = async () => {
   }
 };
 
+// 保存历史记录
+const saveHistory = () => {
+  // 如果正在恢复历史记录，不保存
+  if (isRestoringHistory.value) {
+    return;
+  }
+
+  // 保存当前标注状态
+  if (historyManager.value) {
+    historyManager.value.push({
+      annotations: annotations.value,
+      selectedAnnotation: selectedAnnotation.value,
+    });
+  }
+};
+
 // 自动保存函数
 const autoSave = () => {
   // 清除之前的定时器
@@ -935,10 +964,11 @@ const addAnnotation = (annotation) => {
     lastUsedLabel.value = newAnnotation.label.trim();
   }
 
+  saveHistory(); // 保存历史记录
   autoSave(); // 触发自动保存
 };
 
-const updateAnnotation = (id, updates) => {
+const updateAnnotation = (id, updates, shouldSaveHistory = false) => {
   const index = annotations.value.findIndex((ann) => ann.id === id);
 
   if (index !== -1) {
@@ -956,8 +986,15 @@ const updateAnnotation = (id, updates) => {
         addCategory(updates.label.trim());
         lastUsedLabel.value = updates.label.trim();
       }
+      // 更新标签时总是保存历史记录
+      shouldSaveHistory = true;
     }
 
+    // 只在明确指定时才保存历史记录
+    if (shouldSaveHistory) {
+      saveHistory();
+    }
+    
     autoSave(); // 触发自动保存
   }
 };
@@ -965,11 +1002,18 @@ const updateAnnotation = (id, updates) => {
 const deleteAnnotation = (id) => {
   annotations.value = annotations.value.filter((ann) => ann.id !== id);
   selectedAnnotation.value = null;
+  saveHistory(); // 保存历史记录
   autoSave(); // 触发自动保存
 };
 
 const selectAnnotation = (annotation) => {
   selectedAnnotation.value = annotation;
+};
+
+// 标注操作完成（拖拽、调整大小、旋转结束）
+const onAnnotationOperationComplete = (id) => {
+  // 操作完成后保存历史记录
+  saveHistory();
 };
 
 // 导航功能
@@ -1028,6 +1072,102 @@ const clearSelection = () => {
   selectedAnnotation.value = null;
 };
 
+// 全选标注
+const selectAll = () => {
+  if (annotations.value.length > 0) {
+    // 选中第一个标注（或者可以实现多选功能）
+    selectedAnnotation.value = annotations.value[0];
+    message.info(`当前图片共有 ${annotations.value.length} 个标注`);
+  }
+};
+
+// 复制标注
+const duplicate = () => {
+  if (!selectedAnnotation.value) {
+    return;
+  }
+
+  const original = selectedAnnotation.value;
+  const newAnnotation = {
+    id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+    type: original.type,
+    x: original.x + 20, // 偏移一点位置
+    y: original.y + 20,
+    width: original.width,
+    height: original.height,
+    rotation: original.rotation,
+    label: original.label,
+    created: new Date().toISOString(),
+    visible: true,
+  };
+
+  annotations.value.push(newAnnotation);
+  selectedAnnotation.value = newAnnotation;
+  saveHistory(); // 保存历史记录
+  autoSave();
+};
+
+// 缩放控制
+const resetZoom = () => {
+  if (canvasRef.value) {
+    canvasRef.value.resetZoom();
+  }
+};
+
+const fitToWindow = () => {
+  if (canvasRef.value) {
+    canvasRef.value.fitToWindow();
+  }
+};
+
+const zoomIn = () => {
+  if (canvasRef.value) {
+    canvasRef.value.zoomIn();
+  }
+};
+
+const zoomOut = () => {
+  if (canvasRef.value) {
+    canvasRef.value.zoomOut();
+  }
+};
+
+// 撤销
+const undo = () => {
+  if (!historyManager.value || !historyManager.value.canUndo()) {
+    return;
+  }
+
+  isRestoringHistory.value = true;
+  const state = historyManager.value.undo();
+  
+  if (state) {
+    annotations.value = state.annotations;
+    selectedAnnotation.value = state.selectedAnnotation;
+    autoSave();
+  }
+  
+  isRestoringHistory.value = false;
+};
+
+// 重做
+const redo = () => {
+  if (!historyManager.value || !historyManager.value.canRedo()) {
+    return;
+  }
+
+  isRestoringHistory.value = true;
+  const state = historyManager.value.redo();
+  
+  if (state) {
+    annotations.value = state.annotations;
+    selectedAnnotation.value = state.selectedAnnotation;
+    autoSave();
+  }
+  
+  isRestoringHistory.value = false;
+};
+
 // 显示帮助
 const toggleKeyboardHelp = () => {
   showKeyboardHelp.value = !showKeyboardHelp.value;
@@ -1053,7 +1193,6 @@ const inferenceOne = async () => {
     return;
   }
   if (currentImageIndex.value < 0) {
-    message.warning("请先选择图片");
     return;
   }
 
@@ -1138,20 +1277,39 @@ const runInference = async (startIndex, count) => {
 // 初始化键盘管理器
 const initKeyboardManager = () => {
   const callbacks = {
+    // 文件操作
     openFolder,
     save: saveAnnotations,
+    
+    // 工具切换
     selectTool,
     rectangleTool,
     rotatedRectangleTool,
     createAnnotation, // 快捷键 N
+    
+    // 导航
     prevImage,
     nextImage,
     firstImage,
     lastImage,
+    
+    // 标注操作
     deleteAnnotation: deleteSelectedAnnotation,
+    selectAll,
+    duplicate,
     clearSelection,
-    showHelp: toggleKeyboardHelp,
+    
+    // 视图操作
+    resetZoom,
+    fitToWindow,
+    zoomIn,
+    zoomOut,
     toggleAnnotations, // 快捷键 H
+    
+    // 其他
+    showHelp: toggleKeyboardHelp,
+    undo,
+    redo,
   };
 
   keyboardManager.value = createKeyboardManager(callbacks);
@@ -1159,7 +1317,10 @@ const initKeyboardManager = () => {
 };
 
 onMounted(() => {
-  // 初始化应用
+  // 初始化历史记录管理器
+  historyManager.value = createHistoryManager(50); // 最多保存50条历史记录
+  
+  // 初始化键盘管理器
   initKeyboardManager();
 });
 
@@ -1218,6 +1379,7 @@ onUnmounted(() => {
         <!-- 中间画布区域 -->
         <div class="canvas-area">
           <AnnotationCanvas
+            ref="canvasRef"
             :image="currentImage"
             :annotations="annotations"
             :selected-annotation="selectedAnnotation"
@@ -1229,6 +1391,7 @@ onUnmounted(() => {
             @update-annotation="updateAnnotation"
             @select-annotation="selectAnnotation"
             @switch-tool="switchTool"
+            @annotation-operation-complete="onAnnotationOperationComplete"
           />
         </div>
 

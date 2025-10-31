@@ -149,7 +149,6 @@ export const DEFAULT_SHORTCUTS = {
     // 文件操作
     'ctrl+o': { action: 'openFolder', description: '打开文件夹' },
     'ctrl+s': { action: 'save', description: '保存标注' },
-    'ctrl+shift+s': { action: 'saveAs', description: '另存为' },
 
     // 工具切换
     's': { action: 'selectTool', description: '选择工具' },
@@ -165,7 +164,6 @@ export const DEFAULT_SHORTCUTS = {
 
     // 标注操作
     'delete': { action: 'deleteAnnotation', description: '删除选中标注' },
-    'backspace': { action: 'deleteAnnotation', description: '删除选中标注' },
     'ctrl+a': { action: 'selectAll', description: '选择所有标注' },
     'ctrl+d': { action: 'duplicate', description: '复制标注' },
     'escape': { action: 'clearSelection', description: '清除选择' },
@@ -179,10 +177,8 @@ export const DEFAULT_SHORTCUTS = {
 
     // 其他
     'f1': { action: 'showHelp', description: '显示快捷键帮助' },
-    'f11': { action: 'toggleFullscreen', description: '切换全屏' },
     'ctrl+z': { action: 'undo', description: '撤销' },
     'ctrl+y': { action: 'redo', description: '重做' },
-    'ctrl+shift+z': { action: 'redo', description: '重做' }
 };
 
 /**

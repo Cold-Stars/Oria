@@ -730,6 +730,11 @@ const onMouseUp = (event) => {
     currentAnnotation.value = null;
   }
 
+  // 如果刚完成拖拽、调整大小或旋转操作，通知父组件保存历史记录
+  if ((isDragging.value || isResizing.value || isRotating.value) && props.selectedAnnotation) {
+    emit("annotation-operation-complete", props.selectedAnnotation.id);
+  }
+
   // 重置所有拖拽状态
   isDragging.value = false;
   isResizing.value = false;
@@ -1227,6 +1232,53 @@ const fitImageToCanvas = () => {
   offsetY.value = (containerHeight.value - imgHeight * scale.value) / 2;
 };
 
+// 重置缩放到100%
+const resetZoom = () => {
+  if (!props.image) return;
+  
+  scale.value = 1.0;
+  
+  // 居中显示
+  const imgWidth = props.image.width;
+  const imgHeight = props.image.height;
+  offsetX.value = (containerWidth.value - imgWidth) / 2;
+  offsetY.value = (containerHeight.value - imgHeight) / 2;
+  
+  draw();
+};
+
+// 放大
+const zoomIn = () => {
+  const newScale = Math.min(5, scale.value * 1.2);
+  
+  // 以画布中心为缩放中心
+  const centerX = containerWidth.value / 2;
+  const centerY = containerHeight.value / 2;
+  
+  const scaleDiff = newScale - scale.value;
+  offsetX.value -= ((centerX - offsetX.value) * scaleDiff) / scale.value;
+  offsetY.value -= ((centerY - offsetY.value) * scaleDiff) / scale.value;
+  
+  scale.value = newScale;
+  draw();
+};
+
+// 缩小
+const zoomOut = () => {
+  const newScale = Math.max(0.1, scale.value / 1.2);
+  
+  // 以画布中心为缩放中心
+  const centerX = containerWidth.value / 2;
+  const centerY = containerHeight.value / 2;
+  
+  const scaleDiff = newScale - scale.value;
+  offsetX.value -= ((centerX - offsetX.value) * scaleDiff) / scale.value;
+  offsetY.value -= ((centerY - offsetY.value) * scaleDiff) / scale.value;
+  
+  scale.value = newScale;
+  draw();
+};
+
 // 标签选择处理
 const onLabelSelect = (value) => {
   if (labelSelectorAnnotation.value) {
@@ -1301,6 +1353,14 @@ onUnmounted(() => {
   window.removeEventListener("resize", initCanvas);
   window.removeEventListener("keydown", onKeyDown);
   window.removeEventListener("keyup", onKeyUp);
+});
+
+// 暴露方法给父组件
+defineExpose({
+  resetZoom,
+  fitToWindow: fitImageToCanvas,
+  zoomIn,
+  zoomOut,
 });
 </script>
 
