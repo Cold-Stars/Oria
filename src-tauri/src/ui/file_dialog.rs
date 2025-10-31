@@ -74,3 +74,35 @@ pub async fn select_coco_file(_window: tauri::Window) -> Result<String, AppError
 
     Ok(file_path_str)
 }
+
+/// 选择标签文件（txt格式）
+#[tauri::command]
+pub async fn select_labels_file(_window: tauri::Window) -> Result<String, AppError> {
+    let file_path = rfd::AsyncFileDialog::new()
+        .set_title("选择标签文件")
+        .add_filter("文本文件", &["txt"])
+        .pick_file()
+        .await;
+
+    let file_path = file_path.ok_or_else(|| AppError {
+        message: "No file selected".to_string(),
+    })?;
+
+    let file_path_str = file_path.path().to_string_lossy().to_string();
+
+    Ok(file_path_str)
+}
+
+/// 读取标签文件内容（每行一个类别）
+#[tauri::command]
+pub async fn read_labels_file(file_path: String) -> Result<Vec<String>, AppError> {
+    let content = std::fs::read_to_string(&file_path)?;
+    
+    let labels: Vec<String> = content
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.is_empty()) // 过滤空行
+        .collect();
+
+    Ok(labels)
+}

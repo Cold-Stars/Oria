@@ -86,7 +86,7 @@ const extractCategories = () => {
   });
 
   // 更新类别列表（合并模式，不会丢失之前的类别）
-  const allCategories = Array.from(categoriesSet).sort();
+  const allCategories = Array.from(categoriesSet);
   const addedCount = allCategories.length - labelCategories.value.length;
   labelCategories.value = allCategories;
 
@@ -108,7 +108,6 @@ const addCategory = (category) => {
 
   if (!labelCategories.value.includes(trimmedCategory)) {
     labelCategories.value.push(trimmedCategory);
-    labelCategories.value.sort(); // 保持排序
 
     // 分配颜色（基于类别名称哈希，保证稳定且唯一）
     categoryColors.value[trimmedCategory] = generateCategoryColor(trimmedCategory);
@@ -512,6 +511,212 @@ const importFromCoco = async () => {
     } else {
       console.error("导入COCO失败:", error);
       message.error(`导入COCO失败: ${errorMsg}`);
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 导入标签文件
+const importLabels = async () => {
+  try {
+    isLoading.value = true;
+
+    // 选择标签文件
+    const labelsFilePath = await invoke("select_labels_file");
+
+    if (!labelsFilePath) {
+      isLoading.value = false;
+      return;
+    }
+
+    // 读取标签文件内容
+    const labels = await invoke("read_labels_file", {
+      filePath: labelsFilePath,
+    });
+
+    if (!labels || labels.length === 0) {
+      message.warning("标签文件为空或格式不正确");
+      isLoading.value = false;
+      return;
+    }
+
+    // 询问用户是替换还是合并
+    let importMode = "merge"; // 默认合并
+    let dialogCancelled = false;
+
+    await new Promise((resolve) => {
+      const d = dialog.create({
+        title: "导入标签",
+        content: () => {
+          return h("div", { style: { padding: "16px 0" } }, [
+            h(
+              "p",
+              { style: { marginBottom: "12px", color: "#666" } },
+              `找到 ${labels.length} 个标签类别，请选择导入方式：`
+            ),
+            h(
+              "div",
+              {
+                style: {
+                  maxHeight: "200px",
+                  overflowY: "auto",
+                  padding: "12px",
+                  backgroundColor: "#f5f5f5",
+                  borderRadius: "4px",
+                  marginBottom: "16px",
+                  fontSize: "12px",
+                  lineHeight: "1.8",
+                },
+              },
+              labels.map((label, index) => `${index + 1}. ${label}`).join("\n")
+            ),
+            h(
+              "div",
+              {
+                style: { display: "flex", flexDirection: "column", gap: "12px" },
+              },
+              [
+                h(
+                  "label",
+                  {
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "8px 12px",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      backgroundColor: importMode === "merge" ? "#f0f9ff" : "#fff",
+                    },
+                    onClick: () => {
+                      importMode = "merge";
+                    },
+                  },
+                  [
+                    h("input", {
+                      type: "radio",
+                      name: "importMode",
+                      value: "merge",
+                      checked: importMode === "merge",
+                      style: { marginRight: "8px" },
+                    }),
+                    h("div", [
+                      h(
+                        "div",
+                        { style: { fontWeight: "500", marginBottom: "4px" } },
+                        "🔄 合并标签（推荐）"
+                      ),
+                      h(
+                        "div",
+                        { style: { fontSize: "12px", color: "#999" } },
+                        "将新标签添加到现有标签列表中，保留已有标签"
+                      ),
+                    ]),
+                  ]
+                ),
+                h(
+                  "label",
+                  {
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "8px 12px",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      backgroundColor: importMode === "replace" ? "#f0f9ff" : "#fff",
+                    },
+                    onClick: () => {
+                      importMode = "replace";
+                    },
+                  },
+                  [
+                    h("input", {
+                      type: "radio",
+                      name: "importMode",
+                      value: "replace",
+                      checked: importMode === "replace",
+                      style: { marginRight: "8px" },
+                    }),
+                    h("div", [
+                      h(
+                        "div",
+                        { style: { fontWeight: "500", marginBottom: "4px" } },
+                        "♻️ 替换标签"
+                      ),
+                      h(
+                        "div",
+                        { style: { fontSize: "12px", color: "#999" } },
+                        "清空现有标签列表，使用新导入的标签"
+                      ),
+                    ]),
+                  ]
+                ),
+              ]
+            ),
+          ]);
+        },
+        positiveText: "确定导入",
+        negativeText: "取消",
+        onPositiveClick: () => {
+          d.destroy();
+          resolve();
+        },
+        onNegativeClick: () => {
+          dialogCancelled = true;
+          d.destroy();
+          resolve();
+        },
+      });
+    });
+
+    // 如果用户取消，直接返回
+    if (dialogCancelled) {
+      isLoading.value = false;
+      return;
+    }
+
+    // 执行导入
+    let addedCount = 0;
+    if (importMode === "replace") {
+      // 替换模式：清空现有标签
+      labelCategories.value = [];
+      categoryColors.value = {};
+    }
+
+    // 添加标签
+    labels.forEach((label) => {
+      if (label && label.trim()) {
+        const trimmedLabel = label.trim();
+        if (!labelCategories.value.includes(trimmedLabel)) {
+          labelCategories.value.push(trimmedLabel);
+          categoryColors.value[trimmedLabel] = generateCategoryColor(trimmedLabel);
+          addedCount++;
+        }
+      }
+    });
+
+    message.success(
+      importMode === "replace"
+        ? `标签已替换，共 ${labels.length} 个类别`
+        : `成功导入 ${addedCount} 个新标签，当前共 ${labelCategories.value.length} 个类别`
+    );
+
+    dialog.info({
+      title: "导入成功",
+      content: `标签列表已更新\n\n${labelCategories.value.join("\n")}`,
+      positiveText: "确定",
+    });
+  } catch (error) {
+    // 如果用户取消选择文件，不显示错误提示
+    const errorMsg = typeof error === "string" ? error : error.message || JSON.stringify(error);
+    if (errorMsg.includes("No file selected") || errorMsg.includes("未选择")) {
+      // 用户取消操作，静默处理
+      return;
+    } else {
+      console.error("导入标签失败:", error);
+      message.error(`导入标签失败: ${errorMsg}`);
     }
   } finally {
     isLoading.value = false;
@@ -950,6 +1155,7 @@ onUnmounted(() => {
         @export-coco="exportToCoco"
         @export-yolo="exportToYolo"
         @import-coco="importFromCoco"
+        @import-labels="importLabels"
         @show-inference-settings="showInferenceSettingsDialog"
         @inference-one="inferenceOne"
         @inference-all="inferenceAll"

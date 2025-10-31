@@ -10,6 +10,7 @@ const emit = defineEmits([
   "export-coco",
   "export-yolo",
   "import-coco",
+  "import-labels",
   "show-inference-settings",
   "inference-one",
   "inference-all",
@@ -98,6 +99,10 @@ const exportOptions = [
   {
     label: "📥 导入COCO",
     key: "import-coco",
+  },
+  {
+    label: "🏷️ 导入标签",
+    key: "import-labels",
   },
 ];
 

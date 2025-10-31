@@ -16,7 +16,7 @@ use ui::{file_dialog, image_loader};
 use annotation::{load_annotations, save_annotations};
 use export::coco::{export_coco, import_coco};
 use export::yolo::{export_yolo, export_yolo_batch};
-use file_dialog::{open_folder, select_coco_file, select_save_folder};
+use file_dialog::{open_folder, select_coco_file, select_save_folder, select_labels_file, read_labels_file};
 use image::load_image;
 use image_loader::{
     clear_image_cache, generate_thumbnails, get_cache_stats, get_thumbnail, load_image_cached,
@@ -136,6 +136,8 @@ pub fn run() {
             open_folder,
             select_save_folder,
             select_coco_file,
+            select_labels_file,
+            read_labels_file,
             load_image,
             load_image_cached,
             get_thumbnail,
