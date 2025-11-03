@@ -98,7 +98,7 @@ jobs:
             - 修复已知问题
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.platform.rust_target != '' && format('--target {0} --features onnx', matrix.platform.rust_target) || '--features onnx' }}
+          args: ${{ matrix.platform.os == 'ubuntu-22.04' && format('--target {0} --features onnx --bundles deb', matrix.platform.rust_target) || (matrix.platform.rust_target != '' && format('--target {0} --features onnx', matrix.platform.rust_target) || '--features onnx') }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

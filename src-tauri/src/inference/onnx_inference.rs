@@ -11,12 +11,14 @@ use super::api_client::Detection;
 /// ONNX推理器
 pub struct OnnxInferenceEngine {
     session: Arc<std::sync::Mutex<Session>>,
+    #[allow(dead_code)]
     environment: Arc<Environment>,
     input_width: u32,
     input_height: u32,
     conf_threshold: f32,
     iou_threshold: f32,
     class_names: Vec<String>,
+    #[allow(dead_code)]
     use_gpu: bool,
 }
 
@@ -201,7 +203,7 @@ impl OnnxInferenceEngine {
         // 预处理
         let preprocess_start = std::time::Instant::now();
         let (preprocessed, ratio, padding) = self.preprocess(image)?;
-        let preprocess_time = preprocess_start.elapsed().as_secs_f32() * 1000.0;
+        let _preprocess_time = preprocess_start.elapsed().as_secs_f32() * 1000.0;
 
         // 推理 - 创建 Value
         let inference_start = std::time::Instant::now();
@@ -216,14 +218,14 @@ impl OnnxInferenceEngine {
         let outputs = session_lock
             .run(vec![input_tensor])
             .context("ONNX推理失败")?;
-        let inference_time = inference_start.elapsed().as_secs_f32() * 1000.0;
+        let _inference_time = inference_start.elapsed().as_secs_f32() * 1000.0;
 
         // 后处理
         let postprocess_start = std::time::Instant::now();
         let detections = self.postprocess(&outputs, image, ratio, padding)?;
-        let postprocess_time = postprocess_start.elapsed().as_secs_f32() * 1000.0;
+        let _postprocess_time = postprocess_start.elapsed().as_secs_f32() * 1000.0;
 
-        let total_time = start_time.elapsed().as_secs_f32() * 1000.0;
+        let _total_time = start_time.elapsed().as_secs_f32() * 1000.0;
 
         // println!(
         //     "⏱️  推理性能统计:\n   预处理: {:.2}ms | 模型推理: {:.2}ms | 后处理: {:.2}ms | 总计: {:.2}ms",
