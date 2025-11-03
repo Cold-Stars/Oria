@@ -5,3 +5,4 @@
 pub mod annotation;
 pub mod cache;
 pub mod image;
+pub mod labels;

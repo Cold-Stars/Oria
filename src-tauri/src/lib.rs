@@ -8,7 +8,7 @@ mod ui; // UI交互（文件对话框、图片加载）
 mod utils; // 工具函数
 
 // 重新导出常用模块
-use core::{annotation, cache, image};
+use core::{annotation, cache, image, labels};
 use inference::{api_client, model_inference};
 use ui::{file_dialog, image_loader};
 
@@ -21,6 +21,10 @@ use image::load_image;
 use image_loader::{
     clear_image_cache, generate_thumbnails, get_cache_stats, get_thumbnail, load_image_cached,
     preload_images,
+};
+use labels::{
+    read_classes_file, write_classes_file, append_class_label,
+    extract_labels_from_folder, classes_file_exists,
 };
 use model_inference::{InferenceConfig, InferenceManager};
 
@@ -151,6 +155,11 @@ pub fn run() {
             export_yolo_batch,
             export_coco,
             import_coco,
+            read_classes_file,
+            write_classes_file,
+            append_class_label,
+            extract_labels_from_folder,
+            classes_file_exists,
             check_api_health,
             get_api_model_info,
             inference_single,

@@ -61,6 +61,7 @@ const lastDrawingTool = ref("rectangle"); // 默认为矩形框
 const labelCategories = ref([]); // 所有出现过的标签类别
 const categoryColors = ref({}); // 类别对应的颜色映射
 const lastUsedLabel = ref(""); // 最近使用的标签
+const currentFolder = ref(""); // 当前打开的文件夹路径
 
 // 预定义的高对比度颜色池
 const predefinedColors = [
@@ -138,7 +139,7 @@ const extractCategories = () => {
 };
 
 // 添加新类别
-const addCategory = (category) => {
+const addCategory = async (category) => {
   if (!category || !category.trim()) {
     return;
   }
@@ -150,6 +151,18 @@ const addCategory = (category) => {
 
     // 分配颜色（基于类别名称哈希，保证稳定且唯一）
     categoryColors.value[trimmedCategory] = generateCategoryColor(trimmedCategory);
+
+    // 保存到 classes.txt
+    if (currentFolder.value) {
+      try {
+        await invoke("append_class_label", {
+          imageFolder: currentFolder.value,
+          label: trimmedCategory,
+        });
+      } catch (error) {
+        console.error("保存标签到 classes.txt 失败:", error);
+      }
+    }
   }
 };
 
@@ -745,6 +758,20 @@ const importLabels = async () => {
       }
     });
 
+    // 同步更新 classes.txt
+    if (currentFolder.value) {
+      try {
+        await invoke("write_classes_file", {
+          imageFolder: currentFolder.value,
+          labels: labelCategories.value,
+        });
+        console.log("已更新 classes.txt");
+      } catch (error) {
+        console.error("更新 classes.txt 失败:", error);
+        message.warning("标签已导入，但保存到 classes.txt 失败");
+      }
+    }
+
     message.success(
       importMode === "replace"
         ? `标签已替换，共 ${labels.length} 个类别`
@@ -781,15 +808,74 @@ const openFolder = async () => {
     const imageFilesList = files.filter((file) => isImageFile(file));
     imageFiles.value = imageFilesList;
 
-    // 打开新文件夹时，清空类别列表（会在加载图片时重新提取）
+    if (imageFilesList.length === 0) {
+      errorMessage.value = "所选文件夹中没有找到支持的图片文件";
+      return;
+    }
+
+    // 获取文件夹路径
+    const folderPath = imageFilesList[0].substring(0, imageFilesList[0].lastIndexOf("\\"));
+    currentFolder.value = folderPath;
+
+    // 清空类别列表
     labelCategories.value = [];
     categoryColors.value = {};
 
-    if (imageFilesList.length > 0) {
-      loadImage(0);
-    } else {
-      errorMessage.value = "所选文件夹中没有找到支持的图片文件";
+    // 优先从 classes.txt 加载标签
+    try {
+      const classesExist = await invoke("classes_file_exists", {
+        imageFolder: folderPath,
+      });
+
+      if (classesExist) {
+        // 读取 classes.txt
+        const labels = await invoke("read_classes_file", {
+          imageFolder: folderPath,
+        });
+
+        if (labels && labels.length > 0) {
+          labelCategories.value = labels;
+          // 为每个标签分配颜色
+          labels.forEach((label) => {
+            categoryColors.value[label] = generateCategoryColor(label);
+          });
+          console.log(`从 classes.txt 加载了 ${labels.length} 个标签`);
+        }
+      } else {
+        // classes.txt 不存在，从 JSON 文件提取标签
+        console.log("classes.txt 不存在，尝试从 JSON 文件提取标签...");
+        try {
+          const extractedLabels = await invoke("extract_labels_from_folder", {
+            imageFolder: folderPath,
+          });
+
+          if (extractedLabels && extractedLabels.length > 0) {
+            labelCategories.value = extractedLabels;
+            // 为每个标签分配颜色
+            extractedLabels.forEach((label) => {
+              categoryColors.value[label] = generateCategoryColor(label);
+            });
+
+            // 保存到 classes.txt
+            await invoke("write_classes_file", {
+              imageFolder: folderPath,
+              labels: extractedLabels,
+            });
+
+            console.log(`从 JSON 提取了 ${extractedLabels.length} 个标签并创建了 classes.txt`);
+          }
+        } catch (extractError) {
+          console.warn("从 JSON 提取标签失败:", extractError);
+          // 提取失败不影响继续使用，标签会在标注时动态添加
+        }
+      }
+    } catch (error) {
+      console.error("加载标签失败:", error);
+      // 加载标签失败不影响继续使用
     }
+
+    // 加载第一张图片
+    loadImage(0);
   } catch (error) {
     // 如果用户取消选择，不显示错误提示
     const errorMsg = typeof error === "string" ? error : error.message || JSON.stringify(error);
