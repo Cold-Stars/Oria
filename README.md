@@ -1,6 +1,6 @@
 <div align="center">
   <img src="src-tauri/icons/oria_logo.svg" alt="Oria Logo" width="200"/>
-
+</div>
 
 目标检测标注工具
 
