@@ -35,7 +35,7 @@ Oria 是一个基于 Tauri + Vue 3 的目标检测标注工具，支持矩形框
 
 ```bash
 # 克隆项目
-git clone https://github.com/yourusername/oria.git
+git clone https://github.com/Cold-Stars/Oria
 cd oria
 
 # 安装依赖
