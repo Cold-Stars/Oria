@@ -25,11 +25,11 @@
     "active": true,
     "targets": "all",
     "icon": [
-      "icons/oria_icon32.png",
-      "icons/oria_icon128.png",
-      "icons/oria_icon256.png",
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
       "icons/icon.icns",
-      "icons/oria_icon16.ico"
+      "icons/icon.ico"
     ]
   }
 }
