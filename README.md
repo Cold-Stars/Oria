@@ -184,30 +184,7 @@ oria/
 │   ├── app.py                  # FastAPI 服务
 │   ├── requirements.txt        # Python 依赖
 │   └── README.md               # 服务说明
-│
-├── docs/                        # 文档
-│   ├── AI_LABELING_GUIDE.md    # AI标注指南
-│   └── DEVELOPMENT.md          # 开发指南
-│
 └── README.md                    # 项目说明
-```
-
-## 参与贡献
-
-### 开发流程
-
-```bash
-# 1. Fork 项目
-# 2. 创建特性分支
-git checkout -b feature/amazing-feature
-
-# 3. 提交更改
-git commit -m 'feat: add amazing feature'
-
-# 4. 推送到分支
-git push origin feature/amazing-feature
-
-# 5. 提交 Pull Request
 ```
 
 ## 许可证
